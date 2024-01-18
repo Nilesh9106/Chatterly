@@ -7,7 +7,7 @@ import ChatHeader from "./components/ChatHeader";
 import { Input } from "@/components/ui/input";
 import './chat.css'
 import { Button } from "@/components/ui/button";
-import { SendHorizontal, SmileIcon } from "lucide-react";
+import { Loader2, SendHorizontal, SmileIcon } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Chat, Message } from "@/models";
 import { useEffect, useRef, useState } from "react";
@@ -31,6 +31,7 @@ const ChatRoom = () => {
     const [messages, setMessages] = useState<Message[]>([])
     const [content, setContent] = useState("")
     const [loading, setLoading] = useState(false)
+    const [sendLoading, setSendLoading] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const scrollToBottom = () => {
@@ -53,11 +54,13 @@ const ChatRoom = () => {
             content: content,
             chatId: id
         }
+        setSendLoading(true)
         const res = await postCall("messages", data)
         setMessages([...messages, res as Message])
         setContent("")
         console.log("sent: ", (res as Message).message);
         socket.emit("new message", res as Message)
+        setSendLoading(false)
         const data1 = await getCall("chats");
         if (data1) {
             setChats(data1 as Chat[])
@@ -70,13 +73,9 @@ const ChatRoom = () => {
         } else {
             console.log(`new message from ${message.sender.name}`);
         }
-        if (!loading) {
-            setLoading(true)
-            const data1 = await getCall("chats");
-            if (data1) {
-                setChats(data1 as Chat[])
-            }
-            setLoading(false)
+        const data1 = await getCall("chats");
+        if (data1) {
+            setChats(data1 as Chat[])
         }
     }
 
@@ -131,7 +130,7 @@ const ChatRoom = () => {
                         }
                     }} value={content} onChange={(e) => setContent(e.target.value)} className="dark:bg-neutral-900 bg-neutral-200  flex-1 h-10 rounded-lg" />
                     <Button variant={"default"} onClick={sendMessage} className="rounded-full h-10 w-10" size={"icon"} >
-                        <SendHorizontal size={24} />
+                        {sendLoading ? <Loader2 size={24} className="animate-spin" /> : <SendHorizontal size={24} />}
                     </Button>
                 </div>
             </div>

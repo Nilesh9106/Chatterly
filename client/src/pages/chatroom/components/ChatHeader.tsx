@@ -11,7 +11,7 @@ export default function ChatHeader({ chat }: { chat: Chat | undefined }) {
     const receiver = chat?.users.find((u) => u._id != userInfo?._id)
     return (
         <>
-            <div className="flex cursor-pointer items-center p-2 space-x-4 dark:bg-neutral-900 bg-neutral-200 transition-all">
+            <div className="flex sticky top-0 cursor-pointer items-center p-2 space-x-4 dark:bg-neutral-900 bg-neutral-200 transition-all">
                 <Button variant={"ghost"} size={"icon"} className="rounded-full" onClick={() => navigate('/')} >
                     <ArrowLeft size={24} />
                 </Button>
