@@ -55,6 +55,15 @@ io.on('connection', (socket) => {
             socket.in(user._id).emit("message received", newMessageReceived);
         });
     });
+    socket.on("message deleted", (message) => {
+        var chat = message.chat;
+
+        if (!chat.users) return console.log("chat.users not defined");
+        console.log("message deleted", message);
+        chat.users.forEach((user) => {
+            socket.in(user._id).emit("message deleted", message);
+        });
+    });
 
     socket.off("setup", () => {
         console.log("USER DISCONNECTED", userData);

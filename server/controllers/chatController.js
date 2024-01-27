@@ -111,6 +111,13 @@ const createGroupChat = asyncHandler(async (req, res) => {
     // console.log(users);
 
     try {
+        const isChat = await Chat.find({
+            isGroupChat: true,
+            users: { $all: users },
+        });
+        if (isChat.length > 0) {
+            return res.status(200).send(isChat);
+        }
         const groupChat = await Chat.create({
             chatName: req.body.name,
             users: users,
@@ -187,6 +194,7 @@ const removeFromGroup = asyncHandler(async (req, res) => {
 // @route   PUT /api/chat/groupadd
 // @access  Protected
 const addToGroup = asyncHandler(async (req, res) => {
+    console.log(req.body);
     const { chatId, userId } = req.body;
 
     // check if the requester is admin

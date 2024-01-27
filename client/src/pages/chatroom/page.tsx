@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import useStore from "@/context/store";
 import io, { Socket } from "socket.io-client";
 import { getCall, postCall } from "@/lib/api";
+import Loading from "@/components/loading";
 
 
 const endpoint = import.meta.env.VITE_SOCKET as string;
@@ -83,6 +84,16 @@ const ChatRoom = () => {
         socket = io(endpoint);
         socket.emit("setup", userInfo)
         socket.on("message received", messageReceived);
+        socket.on("message deleted", (message: Message) => {
+            if (message.chat._id == id) {
+                console.log("deleted: ", message.message);
+                setMessages((messages) => messages.filter((m) => m._id != message._id))
+            }
+        });
+        return () => {
+            socket.off("message received");
+            socket.disconnect();
+        }
     }, [])
 
     useEffect(() => {
@@ -107,17 +118,21 @@ const ChatRoom = () => {
         <div className="flex svg-bg  flex-col  h-screen bg-neutral-100 dark:bg-neutral-950 text-neutral-800 dark:text-white">
 
             <ChatHeader chat={chats.find((chat: Chat) => chat._id == id)} />
-            {loading && <div className="flex-1 flex justify-center items-center">Loading...</div>}
-            <ScrollArea className="flex-1 overflow-y-auto px-4 ">
-                {messages.map((message: Message, i: number) => (
+            {loading && <Loading />}
+            {!loading && <ScrollArea className="flex-1 overflow-y-auto px-4 ">
+                {messages?.map((message: Message, i: number) => (
                     message.sender._id == JSON.parse(localStorage.getItem("userInfo")!)._id ? (
-                        <RightChat key={i} message={message} />
+                        <RightChat key={i} message={message} onDelete={() => {
+                            socket.emit("message deleted", message);
+                            setMessages(messages.filter((m) => m._id != message._id))
+                        }} />
                     ) : (
                         <LeftChat key={i} message={message} />
                     )
                 ))}
+                {messages?.length == 0 && <div className="flex justify-center items-center h-full py-3"> <p className="text-2xl font-semibold">No messages yet</p></div>}
                 <div ref={messagesEndRef} />
-            </ScrollArea>
+            </ScrollArea>}
 
             <div className=" pb-4 pt-1 flex justify-center items-center">
                 <div className="max-w-4xl flex items-center justify-center space-x-2  w-full">

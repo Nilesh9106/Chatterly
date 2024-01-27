@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
 import useStore from './context/store'
 import NoChatRoom from './pages/chatroom/NoChatRoom'
+import Profile from './pages/profile/page'
 
 
 const login = async ({ request }: { request: Request }) => {
@@ -100,6 +101,17 @@ const router = createBrowserRouter([
         element: <ChatRoom />,
       }
     ]
+  },
+  {
+    path: 'profile',
+    element: <Profile />,
+    loader: async () => {
+      useStore.setState({ userInfo: JSON.parse(localStorage.getItem("userInfo") ?? "null") })
+      if (!localStorage.getItem("userInfo")) {
+        return redirect("/")
+      }
+      return null;
+    },
   }
 ])
 

@@ -8,14 +8,18 @@ import {
 } from "@/components/ui/context-menu"
 
 import { useState } from "react"
+import { deleteCall } from "@/lib/api"
 
 
 
-export default function RightChat({ message }: { message: Message }) {
+export default function RightChat({ message, onDelete }: { message: Message, onDelete: () => void }) {
     const [open, setOpen] = useState(false)
 
-    const handleDelete = () => {
-        console.log("Delete")
+    const handleDelete = async () => {
+        const data = await deleteCall(`messages/${message._id}`);
+        if (data) {
+            onDelete()
+        }
     }
 
     return (
@@ -24,7 +28,7 @@ export default function RightChat({ message }: { message: Message }) {
                 <ContextMenuTrigger>
                     <div className="flex w-full mt-2 space-x-3 max-w-md ml-auto justify-end cursor-pointer" onClick={() => setOpen(!open)} >
                         <div>
-                            <div className="dark:bg-neutral-900/80 backdrop-blur-lg bg-neutral-200/80  p-3 rounded-l-lg rounded-br-lg">
+                            <div className="bg-blue-600 text-white backdrop-blur-lg   p-3 rounded-l-lg rounded-br-lg">
                                 <p className="text-sm">{message.message}</p>
                             </div>
                             <span className="text-xs text-gray-500 leading-none text-right float-right">{message.sender.name}</span>
