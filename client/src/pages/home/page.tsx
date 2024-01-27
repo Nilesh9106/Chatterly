@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import useStore from "@/context/store";
 import { getCall } from "@/lib/api";
 import { Chat } from "@/models";
+import Loading from "@/components/loading";
 
 
 
@@ -14,7 +15,7 @@ export default function Home() {
     const chats = useStore((state) => state.chats);
     const userInfo = useStore((state) => state.userInfo);
     const setChats = useStore((state) => state.setChats);
-    const [, setLoading] = useState(false)
+    const [loading, setLoading] = useState(false)
     const getChats = async () => {
         if (!userInfo) {
             return redirect("/")
@@ -35,7 +36,8 @@ export default function Home() {
             <div className="flex w-full">
                 <div className={`w-[25%]  h-screen flex flex-col  border ${id ? " max-md:hidden" : "max-md:w-full"}`}>
                     <HomeHeader />
-                    <UserList users={chats} />
+                    {loading && <Loading />}
+                    {!loading && <UserList users={chats} />}
                 </div>
                 <div className={`w-[75%] ${id ? "max-md:w-full" : "max-md:hidden"}`}>
                     <Outlet />

@@ -8,6 +8,10 @@ const Chat = require("../models/chat");
 //@access          Protected
 const allMessages = asyncHandler(async (req, res) => {
     try {
+        Message.updateMany(
+            { chat: req.params.chatId, readBy: { $ne: req.user._id } },
+            { $addToSet: { readBy: req.user._id } }
+        ).exec();
         const messages = await Message.find({ chat: req.params.chatId })
             .populate("sender", "name pic email")
             .populate("chat");
@@ -54,4 +58,22 @@ const sendMessage = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { allMessages, sendMessage };
+const deleteMessage = asyncHandler(async (req, res) => {
+
+    try {
+        const message = await Message.findById(req.params.id);
+        if (message.sender.toString() == req.user._id.toString()) {
+            await Message.findByIdAndDelete(req.params.id);
+            res.json({ message: 'Message removed' });
+        } else {
+            res.status(401);
+            throw new Error('Not authorized to delete this message');
+        }
+    } catch (error) {
+        res.status(400);
+        throw new Error(error.message);
+    }
+
+});
+
+module.exports = { allMessages, sendMessage, deleteMessage };

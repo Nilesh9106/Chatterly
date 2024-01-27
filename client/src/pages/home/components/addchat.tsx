@@ -41,7 +41,7 @@ export default function AddChat() {
     }
 
     const createGroup = async () => {
-        const allUsers = [...group, userInfo]
+        const allUsers = [...group]
         if (allUsers.length == 2) {
             toast.error("Select at least two user to create group")
             return
