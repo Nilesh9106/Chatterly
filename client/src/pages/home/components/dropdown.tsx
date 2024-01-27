@@ -13,7 +13,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MenuIcon } from "lucide-react"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
 
 export default function MainMenu() {
@@ -48,8 +48,10 @@ export default function MainMenu() {
                             </DropdownMenuSubContent>
                         </DropdownMenuPortal>
                     </DropdownMenuSub>
-                    <DropdownMenuItem>
-                        <Link to="/profile">Profile</Link>
+                    <DropdownMenuItem onClick={() => {
+                        navigate("/profile")
+                    }}>
+                        Profile
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />

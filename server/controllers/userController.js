@@ -20,6 +20,45 @@ const allUsers = asyncHandler(async (req, res) => {
     res.send(users);
 });
 
+//@description     Update user
+//@route           PUT /api/users/:id
+//@access          Protected
+const updateUser = asyncHandler(async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        if (req.user._id.toString() !== id.toString()) {
+            res.status(401);
+            throw new Error("You can update only your account");
+        }
+        const user = await User.findByIdAndUpdate(id, req.body, { new: true }).select("-password");
+        res.send(user);
+    } catch (error) {
+        res.status(400);
+        throw new Error(error.message);
+    }
+});
+
+
+//@description     Delete user
+//@route           DELETE /api/users/:id
+//@access          Protected
+const deleteUser = asyncHandler(async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        if (req.user._id.toString() !== id.toString()) {
+            res.status(401);
+            throw new Error("You can delete only your account");
+        }
+        await User.findByIdAndDelete(id);
+        res.send("User Deleted");
+    } catch (error) {
+        res.status(400);
+        throw new Error(error.message);
+    }
+});
+
 //@description     Register new user
 //@route           POST /api/user/
 //@access          Public
@@ -81,4 +120,4 @@ const authUser = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { allUsers, registerUser, authUser };
+module.exports = { allUsers, registerUser, authUser, updateUser, deleteUser };

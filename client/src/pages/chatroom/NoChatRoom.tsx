@@ -32,7 +32,7 @@ export default function NoChatRoom() {
     }, [])
     return (
         <>
-            <div className="flex svg-bg  flex-col  h-screen bg-neutral-100 dark:bg-neutral-950 text-neutral-800 dark:text-white">
+            <div className="flex svg-bg  flex-col  h-dvh bg-neutral-100 dark:bg-neutral-950 text-neutral-800 dark:text-white">
 
                 <div className="flex flex-col justify-center items-center h-full">
                     <div className="text-2xl font-semibold">Select a chat to start messaging</div>

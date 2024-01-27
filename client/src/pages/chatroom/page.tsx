@@ -16,6 +16,8 @@ import useStore from "@/context/store";
 import io, { Socket } from "socket.io-client";
 import { getCall, postCall } from "@/lib/api";
 import Loading from "@/components/loading";
+import EmojiPicker, { EmojiStyle, Theme } from 'emoji-picker-react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 
 const endpoint = import.meta.env.VITE_SOCKET as string;
@@ -115,7 +117,7 @@ const ChatRoom = () => {
 
 
     return (
-        <div className="flex svg-bg  flex-col  h-screen bg-neutral-100 dark:bg-neutral-950 text-neutral-800 dark:text-white">
+        <div className="flex svg-bg  flex-col  h-dvh bg-neutral-100 dark:bg-neutral-950 text-neutral-800 dark:text-white">
 
             <ChatHeader chat={chats.find((chat: Chat) => chat._id == id)} />
             {loading && <Loading />}
@@ -134,11 +136,22 @@ const ChatRoom = () => {
                 <div ref={messagesEndRef} />
             </ScrollArea>}
 
+
             <div className=" pb-4 pt-1 flex justify-center items-center">
                 <div className="max-w-4xl flex items-center justify-center space-x-2  w-full">
-                    <Button variant={"secondary"} className="rounded-full h-10 w-10" size={"icon"} >
-                        <SmileIcon size={24} />
-                    </Button>
+
+                    <Popover  >
+                        <PopoverTrigger>
+                            <Button variant={"secondary"} className="rounded-full h-10 w-10" size={"icon"} >
+                                <SmileIcon size={24} />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-fit p-0 mx-2">
+                            <EmojiPicker theme={Theme.AUTO} emojiStyle={EmojiStyle.APPLE} width={300} height={400} onEmojiClick={(e) => {
+                                setContent((content) => content + e.emoji)
+                            }} />
+                        </PopoverContent>
+                    </Popover>
                     <Input type="text" placeholder="Message" onKeyDown={(e) => {
                         if (e.key == "Enter") {
                             sendMessage()
