@@ -59,9 +59,15 @@ const sendMessage = asyncHandler(async (req, res) => {
 const deleteMessage = asyncHandler(async (req, res) => {
 
     try {
-        const message = await Message.findById(req.params.id);
+        const message = await Message.findById(req.params.id).populate('chat');
+
         if (message.sender.toString() == req.user._id.toString()) {
             await Message.findByIdAndDelete(req.params.id);
+            if (message.chat.latestMessage.toString() == req.params.id) {
+                console.log('latest message deleted');
+                const latest = await Message.findOne({ chat: message.chat._id }).sort({ createdAt: -1 });
+                await Chat.findByIdAndUpdate(message.chat._id, { latestMessage: latest._id })
+            }
             res.json({ message: 'Message removed' });
         } else {
             res.status(401);

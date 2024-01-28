@@ -17,6 +17,7 @@ export default function NoChatRoom() {
     const [loading, setLoading] = useState(false)
     const messageReceived = async (message: Message) => {
         console.log(`new message from ${message.sender.name}`);
+        toast.info(`${message.sender.name} sent: ${message.message}`)
 
         if (!loading) {
             setLoading(true)

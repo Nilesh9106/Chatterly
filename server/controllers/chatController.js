@@ -107,14 +107,15 @@ const createGroupChat = asyncHandler(async (req, res) => {
 
     users1.push(req.user);
 
-    let users = users1;
+    let users = users1.sort();
     // console.log(users);
 
     try {
-        const isChat = await Chat.find({
+        const isChat = await Chat.findOne({
             isGroupChat: true,
             users: { $all: users },
-        });
+        }).populate("users", "-password")
+            .populate("groupAdmin", "-password");
         if (isChat.length > 0) {
             return res.status(200).send(isChat);
         }
