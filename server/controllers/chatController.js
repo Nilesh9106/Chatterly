@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const Chat = require("../models/chat");
 const User = require("../models/user");
-
+const Message = require("../models/message");
 //@description     Create or fetch One to One Chat
 //@route           POST /api/chat/
 //@access          Protected
@@ -137,16 +137,20 @@ const createGroupChat = asyncHandler(async (req, res) => {
 });
 
 // @desc    Rename Group
-// @route   PUT /api/chat/rename
+// @route   PUT /api/chat/:chatId
 // @access  Protected
 const renameGroup = asyncHandler(async (req, res) => {
-    const { chatId, chatName } = req.body;
+    const chatId = req.params.chatId;
+
+    const chat = await Chat.findById(chatId);
+    if (req.user._id.toString() !== chat.groupAdmin.toString()) {
+        res.status(401);
+        throw new Error("You are not authorized to rename this chat");
+    }
 
     const updatedChat = await Chat.findByIdAndUpdate(
         chatId,
-        {
-            chatName: chatName,
-        },
+        req.body,
         {
             new: true,
         }
@@ -169,6 +173,11 @@ const removeFromGroup = asyncHandler(async (req, res) => {
     const { chatId, userId } = req.body;
 
     // check if the requester is admin
+    const chat = await Chat.findById(chatId);
+    if (req.user._id.toString() !== chat.groupAdmin.toString() && req.user._id.toString() !== userId) {
+        res.status(401);
+        throw new Error("You are not authorized to remove users from this chat");
+    }
 
     const removed = await Chat.findByIdAndUpdate(
         chatId,
@@ -198,6 +207,11 @@ const addToGroup = asyncHandler(async (req, res) => {
     const { chatId, userId } = req.body;
 
     // check if the requester is admin
+    const chat = await Chat.findById(chatId);
+    if (req.user._id.toString() !== chat.groupAdmin.toString()) {
+        res.status(401);
+        throw new Error("You are not authorized to add users to this chat");
+    }
 
     const added = await Chat.findByIdAndUpdate(
         chatId,
@@ -219,6 +233,28 @@ const addToGroup = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Add user to Group / Leave
+// @route   DELETE /api/chats/:chatId
+// @access  Protected
+const deleteChat = asyncHandler(async (req, res) => {
+    const chatId = req.params.chatId;
+
+    // check if the requester is admin
+    try {
+        const chat = await Chat.findById(chatId);
+        if (chat.isGroupChat && req.user._id.toString() !== chat.groupAdmin.toString()) {
+            res.status(401);
+            throw new Error("You are not authorized to delete this chat");
+        }
+        await Message.deleteMany({ chat: chatId });
+
+        await Chat.deleteOne({ _id: chatId });
+        res.send(chat);
+    } catch (error) {
+        throw new Error(error.message);
+    }
+});
+
 module.exports = {
     accessChat,
     fetchChat,
@@ -227,4 +263,5 @@ module.exports = {
     renameGroup,
     addToGroup,
     removeFromGroup,
+    deleteChat
 };

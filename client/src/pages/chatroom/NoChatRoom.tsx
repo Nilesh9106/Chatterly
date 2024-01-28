@@ -4,12 +4,16 @@ import { Socket, io } from 'socket.io-client';
 import useStore from '@/context/store';
 import { Chat, Message } from '@/models';
 import { getCall } from '@/lib/api';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const endpoint = import.meta.env.VITE_SOCKET as string;
 let socket: Socket;
 export default function NoChatRoom() {
     const userInfo = useStore((state) => state.userInfo);
     const setChats = useStore((state) => state.setChats);
+    const chats = useStore((state) => state.chats);
+    const navigate = useNavigate()
     const [loading, setLoading] = useState(false)
     const messageReceived = async (message: Message) => {
         console.log(`new message from ${message.sender.name}`);
@@ -29,6 +33,16 @@ export default function NoChatRoom() {
         socket = io(endpoint);
         socket.emit("setup", userInfo)
         socket.on("message received", messageReceived);
+        socket.on("chat deleted", (chat: Chat) => {
+            toast.error("Chat deleted")
+            setChats(chats.filter((c) => c._id !== chat._id))
+            navigate("/chats")
+        });
+        return () => {
+            socket.off("message received");
+            socket.off("chat deleted");
+            socket.disconnect();
+        }
     }, [])
     return (
         <>

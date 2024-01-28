@@ -22,7 +22,7 @@ export default function UserList({ users }: { users: Chat[] }) {
                         const receiver = user.users.find((u) => u._id != userInfo?._id)
                         return <Link to={`/chats/${user._id}`} key={i} className={`flex cursor-pointer rounded items-center p-2 space-x-4 dark:hover:bg-neutral-900 hover:bg-neutral-200 transition-all ${(id) == user._id ? "dark:bg-neutral-900 bg-neutral-200" : ""}`}>
                             <Avatar>
-                                <AvatarImage src={receiver?.pic} />
+                                <AvatarImage src={user.isGroupChat ? user.pic : receiver?.pic} />
                                 <AvatarFallback>ND</AvatarFallback>
                             </Avatar>
                             <div className="space-y-1">

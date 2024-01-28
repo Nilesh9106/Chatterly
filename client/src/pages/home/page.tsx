@@ -34,12 +34,12 @@ export default function Home() {
     return (
         <>
             <div className="flex w-full">
-                <div className={`w-[25%]  h-dvh flex flex-col  border ${id ? " max-md:hidden" : "max-md:w-full"}`}>
+                <div className={`lg:w-[25%] md:w-[35%]   h-dvh flex flex-col  border ${id ? " max-md:hidden" : "max-md:w-full"}`}>
                     <HomeHeader />
                     {loading && <Loading />}
                     {!loading && <UserList users={chats} />}
                 </div>
-                <div className={`w-[75%] ${id ? "max-md:w-full" : "max-md:hidden"}`}>
+                <div className={`lg:w-[75%] md:w-[65%] ${id ? "max-md:w-full" : "max-md:hidden"}`}>
                     <Outlet />
                 </div>
             </div>

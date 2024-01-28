@@ -1,5 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/user");
+const Message = require("../models/message");
+const Chat = require("../models/chat");
 const generateToken = require("../middlewares/generateToken");
 
 //@description     Get or Search all users
@@ -45,14 +47,31 @@ const updateUser = asyncHandler(async (req, res) => {
 //@access          Protected
 const deleteUser = asyncHandler(async (req, res) => {
     const id = req.params.id;
-
+    let chatDeleted = []
     try {
         if (req.user._id.toString() !== id.toString()) {
             res.status(401);
             throw new Error("You can delete only your account");
         }
+        await Message.deleteMany({ sender: id });
+
+        const chats = await Chat.find({ users: { $elemMatch: { $eq: id } } })
+        chats.forEach(async (chat) => {
+            if (chat.users.length > 2) {
+                chat.users = chat.users.filter((user) => user.toString() !== id.toString());
+                if (chat.groupAdmin.toString() == id) {
+                    chat.groupAdmin = chat.users[0];
+                }
+                await chat.save();
+            } else {
+                chatDeleted.push(chat)
+                await Message.deleteMany({ chat: chat._id });
+                await Chat.deleteOne({ _id: chat._id });
+            }
+        });
+
         await User.findByIdAndDelete(id);
-        res.send("User Deleted");
+        res.send(chatDeleted);
     } catch (error) {
         res.status(400);
         throw new Error(error.message);
