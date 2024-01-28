@@ -15,9 +15,10 @@ import {
     TabsList,
     TabsTrigger,
 } from "@/components/ui/tabs"
-import { Form } from "react-router-dom"
+import { Form, useNavigation } from "react-router-dom"
 
 export default function Auth() {
+    const navigation = useNavigation();
     return (
         <>
             <div className="w-full h-screen flex justify-center  my-36">
@@ -46,7 +47,7 @@ export default function Auth() {
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button type="submit" className="w-full">Login</Button>
+                                    <Button disabled={!(navigation.state == "idle")} type="submit" className="w-full">{navigation.state == "submitting" ? "Submitting" : (navigation.state == "loading" ? "Done" : "Login")}</Button>
                                 </CardFooter>
                             </Card>
                         </Form>
@@ -76,7 +77,7 @@ export default function Auth() {
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button type="submit" className="w-full">Sign up</Button>
+                                    <Button disabled={!(navigation.state == "idle")} type="submit" className="w-full">{navigation.state == "submitting" ? "Submitting" : (navigation.state == "loading" ? "Done" : "Sign up")}</Button>
                                 </CardFooter>
                             </Card>
                         </Form>

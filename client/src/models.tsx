@@ -11,6 +11,7 @@ export interface Message {
     _id: string;
     sender: User;
     message: string;
+    readBy: User[];
     chat: Chat;
     createdAt: string;
     updatedAt: string;
@@ -23,6 +24,7 @@ export interface Chat {
     isGroupChat: boolean;
     latestMessage: Message;
     groupAdmin: User;
+    pic: string;
     createdAt: string;
     updatedAt: string;
 }

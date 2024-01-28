@@ -4,6 +4,8 @@ const dotenv = require('dotenv');
 const connectDB = require('./middlewares/dbconfig');
 const userRoutes = require('./routes/user');
 const chatRoutes = require('./routes/chat');
+const Chat = require('./models/chat');
+const Message = require('./models/message');
 const messageRoutes = require('./routes/message');
 const { notFound, errorHandler } = require("./middlewares/errorMiddleware");
 const cors = require('cors');
@@ -48,22 +50,42 @@ io.on('connection', (socket) => {
         var chat = newMessageReceived.chat;
 
         if (!chat.users) return console.log("chat.users not defined");
-
+        console.log("new message", newMessageReceived.message);
         chat.users.forEach((user) => {
             if (user._id == newMessageReceived.sender._id) return;
 
-            socket.in(user._id).emit("message received", newMessageReceived);
+            socket.in(user).emit("message received", newMessageReceived);
         });
     });
     socket.on("message deleted", (message) => {
         var chat = message.chat;
 
         if (!chat.users) return console.log("chat.users not defined");
-        console.log("message deleted", message);
+        console.log("message deleted", message.message);
         chat.users.forEach((user) => {
-            socket.in(user._id).emit("message deleted", message);
+            console.log(user);
+            socket.in(user).emit("message deleted", message);
         });
     });
+
+    socket.on("message seen", async (message, user) => {
+        var chat = message.chat;
+
+        if (!chat.users) return console.log("chat.users not defined");
+        console.log("message seen", message.message);
+        message = await Message.findByIdAndUpdate(message._id, { $addToSet: { readBy: user } }, { new: true }).populate("readBy", "_id name pic email").populate("sender", "_id name pic email").populate("chat");
+
+        chat.users.forEach((user) => {
+            socket.in(user).emit("message seen", message);
+        });
+    });
+
+    socket.on("chat deleted", async (chat) => {
+        console.log("chat deleted", chat.chatName);
+        chat.users.forEach((user) => {
+            socket.in(user).emit("chat deleted", chat);
+        });
+    })
 
     socket.off("setup", () => {
         console.log("USER DISCONNECTED", userData);

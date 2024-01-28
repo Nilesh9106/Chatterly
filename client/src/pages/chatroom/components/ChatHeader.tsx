@@ -6,14 +6,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import useStore from "@/context/store"
-import { getCall, putCall } from "@/lib/api"
+import { deleteCall, getCall, putCall } from "@/lib/api"
 import { Chat, User } from "@/models"
 import { ArrowLeft, MoreVertical, Search } from "lucide-react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { Socket } from "socket.io-client"
 import { toast } from "sonner"
 
-export default function ChatHeader({ chat }: { chat: Chat | undefined }) {
+export default function ChatHeader({ chat, socket }: { socket: Socket, chat: Chat | undefined }) {
     const navigate = useNavigate()
     const userInfo = useStore(state => state.userInfo)
     const setChats = useStore(state => state.setChats);
@@ -24,6 +25,90 @@ export default function ChatHeader({ chat }: { chat: Chat | undefined }) {
     const [addUser, setAddUser] = useState(false)
     const [loading, setLoading] = useState(false)
     const [query, setQuery] = useState("")
+    const fileRef = useRef<HTMLInputElement>(null)
+    const [file, setFile] = useState("")
+
+    const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        let selectedFile: File;
+        if (event.target.files && event.target.files.length > 0) {
+            selectedFile = event.target.files[0];
+        }
+
+        if (selectedFile!) {
+
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Create a canvas element
+                    const canvas = document.createElement('canvas');
+
+                    // Set the canvas dimensions to the desired size (e.g., 300x300)
+                    const maxWidth = 250;
+                    const maxHeight = 250;
+
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height *= maxWidth / width;
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width *= maxHeight / height;
+                            height = maxHeight;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    // Draw the image on the canvas
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+
+                    // Get the base64 representation with reduced size
+                    const base64Data = canvas.toDataURL('image/png');
+                    console.log(base64Data.length);
+
+                    setFile(base64Data);
+                };
+
+                if (e.target) {
+                    img.src = e.target.result as string;
+                }
+            };
+
+            // Read the selected image as a data URL
+            reader.readAsDataURL(selectedFile);
+        }
+    };
+
+    const handleUpdate = async () => {
+        setLoading(true)
+        toast.promise(putCall(`chats/${chat?._id}`, {
+            pic: file
+        }), {
+            loading: "Updating...",
+            success: (data) => {
+                if (data) {
+                    setChats(chats.map((c) => c._id == chat?._id ? data as Chat : c))
+                    setFile("")
+                    setLoading(false)
+                    return "Updated!!"
+                }
+                setLoading(false)
+                return "Error"
+            },
+            error: () => {
+                setLoading(false)
+                return "Error"
+            }
+        })
+    }
 
     const deleteUser = async (id: string) => {
         const data = await putCall(`chats/groupremove`, {
@@ -60,6 +145,31 @@ export default function ChatHeader({ chat }: { chat: Chat | undefined }) {
         }
         setLoading(false)
     }
+    const handleDelete = async () => {
+        setLoading(true)
+        if (confirm("Are you sure you want to delete this chat?") === false) {
+            setLoading(false)
+            return;
+        }
+        toast.promise(deleteCall(`chats/${chat?._id}`), {
+            loading: "Deleting...",
+            success: (data) => {
+                if (data) {
+                    setChats(chats.filter((c) => c._id != chat?._id))
+                    setOpen(false)
+                    socket.emit("chat deleted", data);
+                    navigate("/chats")
+                    return "Deleted"
+                }
+                setLoading(false)
+                return "Error"
+            },
+            error: () => {
+                setLoading(false)
+                return "Error"
+            }
+        });
+    }
 
     return (
         <>
@@ -68,7 +178,7 @@ export default function ChatHeader({ chat }: { chat: Chat | undefined }) {
                     <ArrowLeft size={24} />
                 </Button>
                 <Avatar>
-                    <AvatarImage src={receiver?.pic} />
+                    <AvatarImage src={chat?.isGroupChat ? chat?.pic : receiver?.pic} />
                     <AvatarFallback>ND</AvatarFallback>
                 </Avatar>
                 <Dialog open={open} onOpenChange={setOpen}>
@@ -85,8 +195,13 @@ export default function ChatHeader({ chat }: { chat: Chat | undefined }) {
                         <ScrollArea>
                             <div className="flex flex-col gap-3">
                                 <div className="flex flex-col items-center gap-3">
-                                    <img src={receiver?.pic} alt={receiver?.name} className="size-48 rounded-full" />
+                                    <input type="file" ref={fileRef} onChange={handleImageSelect} className="hidden" />
+                                    <img onClick={() => {
+                                        if (!chat?.isGroupChat || (chat.isGroupChat && chat?.groupAdmin._id != userInfo?._id)) return;
+                                        fileRef.current?.click()
+                                    }} src={file.length > 0 ? file : (chat?.isGroupChat ? chat?.pic : receiver?.pic)} alt={receiver?.name} className="size-48 rounded-full cursor-pointer" />
                                     <div className="font-semibold text-2xl">{chat?.isGroupChat ? chat.chatName : receiver?.name}</div>
+                                    {file.length > 0 && <Button disabled={loading} onClick={handleUpdate}>Save</Button>}
                                 </div>
                                 <hr />
                                 <div className="gap-3 flex flex-col">
@@ -124,6 +239,7 @@ export default function ChatHeader({ chat }: { chat: Chat | undefined }) {
                                         setOpen(false)
                                         setAddUser(true)
                                     }} >Add user</Button>
+                                    <Button variant={"destructive"} onClick={handleDelete} >Delete Chat</Button>
                                 </>}
                             </div>
                         </ScrollArea>

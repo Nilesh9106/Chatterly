@@ -1,4 +1,5 @@
 
+import Loading from "@/components/loading"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -16,7 +17,7 @@ import { getCall, postCall } from "@/lib/api"
 import { Chat, User } from "@/models"
 import { DialogClose } from "@radix-ui/react-dialog"
 import { ArrowLeft, Plus } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -30,14 +31,17 @@ export default function AddChat() {
     const [open, setOpen] = useState(false)
     const [groupOpen, setGroupOpen] = useState(false)
     const [groupName, setGroupName] = useState("")
+    const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        console.log(e.target.value);
+
+        setLoading(true)
         const data = await getCall(`users/?search=${e.target.value}`)
         if (data) {
             setUsers(data as User[]);
         }
+        setLoading(false)
     }
 
     const createGroup = async () => {
@@ -54,10 +58,12 @@ export default function AddChat() {
             users: allUsers,
             name: groupName
         }
+        setLoading(true)
         const res = await postCall("chats/group", data);
         addChat(res as Chat)
         navigate(`/chats/${res.data._id}`)
         toast.success("Chat created")
+        setLoading(false)
         setOpen(false)
         setGroupOpen(false)
     }
@@ -69,11 +75,13 @@ export default function AddChat() {
             return
         }
         if (allUsers.length == 2) {
+            setLoading(true)
             const res = await postCall("chats", {
                 userId: group[0]._id,
             });
             addChat(res as Chat)
-            navigate(`/chats/${res.data._id}`)
+            setLoading(false)
+            navigate(`/chats/${res._id}`)
             toast.success("Chat created")
             setOpen(false)
         } else if (allUsers.length > 2) {
@@ -81,6 +89,17 @@ export default function AddChat() {
             setGroupOpen(true)
         }
     }
+
+    useEffect(() => {
+        (async () => {
+            setLoading(true)
+            const data = await getCall(`users`)
+            if (data) {
+                setUsers(data as User[]);
+            }
+            setLoading(false)
+        })()
+    }, [])
     return (
         <>
 
@@ -94,7 +113,8 @@ export default function AddChat() {
                     <DialogHeader>
                         <Input placeholder="Search" onChange={(e) => handleChange(e)} className="my-4" type="search" />
                     </DialogHeader>
-                    <ScrollArea className="flex-1 overflow-y-auto  ">
+                    {loading && <Loading />}
+                    {!loading && <ScrollArea className="flex-1 overflow-y-auto  ">
                         {users.length == 0 && <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">No chats</div>}
                         {users.map((user: User, i: number) => {
                             return <div key={i} className={`flex cursor-pointer rounded-md items-center justify-between p-2 space-x-4 dark:hover:bg-neutral-900 hover:bg-neutral-200 transition-all`}>
@@ -118,7 +138,7 @@ export default function AddChat() {
                             </div>
                         })}
 
-                    </ScrollArea>
+                    </ScrollArea>}
                     <DialogFooter className="flex ">
                         <DialogClose className="flex-1" asChild>
                             <Button variant="secondary" className="w-full" >Cancel</Button>

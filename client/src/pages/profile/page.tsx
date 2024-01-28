@@ -1,17 +1,21 @@
 import { Button } from "@/components/ui/button"
 import useStore from "@/context/store"
-import { putCall } from "@/lib/api";
-import { User } from "@/models";
-import { useRef, useState } from "react";
+import { deleteCall, putCall } from "@/lib/api";
+import { Chat, User } from "@/models";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Socket, io } from "socket.io-client";
 import { toast } from "sonner";
 
-
+const endpoint = import.meta.env.VITE_SOCKET as string;
+let socket: Socket;
 export default function Profile() {
     const userInfo = useStore((state) => state.userInfo)
     const login = useStore((state) => state.login)
     const [file, setFile] = useState<string | ArrayBuffer | null>("");
     const fileRef = useRef<HTMLInputElement>(null)
     const [loading, setLoading] = useState(false)
+    const navigate = useNavigate();
 
     const handleFileChange = () => {
         fileRef.current?.click();
@@ -98,10 +102,45 @@ export default function Profile() {
                 return "Something went wrong!!"
             }
         })
-
-
     }
 
+    const handleDelete = async () => {
+
+        setLoading(true)
+        if (confirm("Are you sure you want to delete your account?") === false) {
+            setLoading(false)
+            return;
+        }
+        toast.promise(deleteCall(`users/${userInfo?._id}`), {
+            loading: "Deleting...",
+            success: (data: Chat[]) => {
+                if (data) {
+                    data.forEach((chat) => {
+                        socket.emit("chat deleted", chat)
+                    })
+                    localStorage.removeItem("userInfo")
+                    setLoading(false)
+                    navigate('/')
+                    return "Deleted"
+                }
+                setLoading(false)
+                return "Error"
+            },
+            error: () => {
+                setLoading(false)
+                return "Error"
+            }
+        });
+    }
+
+    useEffect(() => {
+        socket = io(endpoint);
+        socket.emit("setup", userInfo)
+
+        return () => {
+            socket.disconnect()
+        }
+    }, [])
 
     return (
         <>
@@ -113,6 +152,7 @@ export default function Profile() {
                         <h1 className="text-2xl font-semibold mt-2">{userInfo?.name}</h1>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400">{userInfo?.email}</p>
                         {file?.toString() !== "" && <Button disabled={loading} className="my-3" size={"sm"} onClick={handleUpdate} >Save</Button>}
+                        <Button disabled={loading} className="my-3" variant={"destructive"} size={"sm"} onClick={handleDelete} >Delete Account</Button>
                     </div>
                 </div>
             </div>
