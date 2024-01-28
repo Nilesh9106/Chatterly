@@ -112,18 +112,28 @@ const ChatRoom = () => {
         }
     }
 
+    const fetchChats = async () => {
+        const data1 = await getCall("chats");
+        if (data1) {
+            setChats(data1 as Chat[])
+        }
+    }
+
     useEffect(() => {
         socket = io(endpoint);
         socket.emit("setup", userInfo)
         socket.on("message received", messageReceived);
-        socket.on("message deleted", (message: Message) => {
+        socket.on("message deleted", async (message: Message) => {
             if (message.chat._id == id) {
                 console.log("deleted: ", message.message);
+
                 setMessages((messages) => messages.filter((m) => m._id != message._id))
+
             } else {
                 console.log("deleted: other ", message.message);
 
             }
+            fetchChats()
         });
         socket.on("chat deleted", (chat: Chat) => {
             toast.error("Chat deleted")
@@ -178,6 +188,7 @@ const ChatRoom = () => {
                         <RightChat key={i} chat={chats.find((chat: Chat) => chat._id == id)!} message={message} onDelete={() => {
                             socket.emit("message deleted", message);
                             setMessages(messages.filter((m) => m._id != message._id))
+                            fetchChats()
                         }} />
                     ) : (
                         <LeftChat key={i} message={message} />
@@ -198,7 +209,7 @@ const ChatRoom = () => {
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-fit p-0 mx-2">
-                            <EmojiPicker theme={Theme.AUTO} emojiStyle={EmojiStyle.APPLE} width={300} height={400} onEmojiClick={(e) => {
+                            <EmojiPicker searchDisabled theme={Theme.AUTO} emojiStyle={EmojiStyle.APPLE} width={300} height={400} onEmojiClick={(e) => {
                                 setContent((content) => content + e.emoji)
                             }} />
                         </PopoverContent>

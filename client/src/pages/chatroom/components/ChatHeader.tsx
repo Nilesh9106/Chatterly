@@ -241,6 +241,7 @@ export default function ChatHeader({ chat, socket }: { socket: Socket, chat: Cha
                                     }} >Add user</Button>
                                     <Button variant={"destructive"} onClick={handleDelete} >Delete Chat</Button>
                                 </>}
+                                {!chat?.isGroupChat && <Button variant={"destructive"} onClick={handleDelete} >Delete Chat</Button>}
                             </div>
                         </ScrollArea>
                     </DialogContent>

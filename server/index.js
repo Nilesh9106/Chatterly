@@ -63,7 +63,6 @@ io.on('connection', (socket) => {
         if (!chat.users) return console.log("chat.users not defined");
         console.log("message deleted", message.message);
         chat.users.forEach((user) => {
-            console.log(user);
             socket.in(user).emit("message deleted", message);
         });
     });
